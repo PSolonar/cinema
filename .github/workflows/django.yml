@@ -1,0 +1,32 @@
+name: CinemaCI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.12]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Build Docker image
+      run: docker build -t cinema_app .
+    - name: Run container
+      run: docker run -d --name cinema_app_container -p 8050:8050 cinema_app
+    - name: Wait for container to start
+      run: sleep 10
+    - name: Test application endpoint
+      run: |
+          response=$(curl -s http://localhost:8050)
+          echo "Response: $response"
+    - name: Stop container
+      run: docker stop cinema_app_container && docker rm cinema_app_container
